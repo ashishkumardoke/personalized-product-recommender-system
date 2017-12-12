@@ -1,0 +1,213 @@
+
+# coding: utf-8
+
+# In[1]:
+
+
+import graphlab
+
+
+# In[11]:
+
+
+
+import pandas as pd
+
+df = pd.read_excel('Client id to Item.xlsx')
+
+
+# In[3]:
+
+
+df = df.dropna()
+
+
+# In[18]:
+
+
+df.head()
+
+
+# In[5]:
+
+
+df["ClientID"] = df["ClientID"].astype(int)
+
+
+# In[17]:
+
+
+df.rename(columns={'Item':'productid'}, inplace=True)
+
+
+# In[9]:
+
+
+df["Quantity"] = df["Quantity"].astype(int)
+
+
+# In[12]:
+
+
+def handle_non_numerical_data(df):
+    columns = df.columns.values
+    for column in columns:
+        text_digit_vals = {}
+        def convert_to_int(val):
+            return text_digit_vals[val]
+
+        if df[column].dtype != np.int64 and df[column].dtype != np.float64:
+            column_contents = df[column].values.tolist()
+            unique_elements = set(column_contents)
+            x = 0
+            for unique in unique_elements:
+                if unique not in text_digit_vals:
+                    text_digit_vals[unique] = x
+                    x+=1
+
+            df[column] = list(map(convert_to_int, df[column]))
+
+    return df
+
+
+# In[15]:
+
+
+df= handle_non_numerical_data(df)
+
+
+# In[14]:
+
+
+import numpy as np
+
+
+# In[19]:
+
+
+df['desc']=df1['Item']
+
+
+# In[20]:
+
+
+df.head()
+
+
+# In[23]:
+
+
+df.shape
+
+
+# In[24]:
+
+
+data=df[df['Quantity']>1]
+
+
+# In[25]:
+
+
+data.shape
+
+
+# In[27]:
+
+
+users = data['ClientID'].unique()
+
+
+# In[28]:
+
+
+len(users)
+
+
+# In[30]:
+
+
+from graphlab import SFrame
+
+
+# In[31]:
+
+
+def int_to_cust(i):
+    result = ''
+    while i:
+        result = chrs[i % l] + result
+        i = i // l
+    if not result:
+        result = chrs[0]
+    return result
+
+
+# In[32]:
+
+
+sf = SFrame(data=data)
+
+
+# In[33]:
+
+
+train_data,test_data = sf.random_split(.8,seed=0)
+
+
+# In[34]:
+
+
+popularity_model = graphlab.popularity_recommender.create(train_data,
+                                                         user_id='ClientID',
+                                                         item_id='productid')
+
+
+# In[35]:
+
+
+popularity_model.recommend(users=[users[0]])
+
+
+# In[36]:
+
+
+popularity_model.recommend(users=[users[1]])
+
+
+# In[37]:
+
+
+personalized_model = graphlab.item_similarity_recommender.create(train_data,
+                                                                user_id='ClientID',
+                                                                item_id='productid')
+
+
+# In[47]:
+
+
+personalized_model.recommend(users=[users[3]])
+
+
+# In[48]:
+
+
+personalized_model.recommend(users=[users[4]])
+
+
+# In[40]:
+
+
+if graphlab.version[:3] >= "1.6":
+    model_performance = graphlab.compare(test_data, [popularity_model, personalized_model], user_sample=0.05)
+    graphlab.show_comparison(model_performance,[popularity_model, personalized_model])
+else:
+    get_ipython().magic('matplotlib inline')
+    model_performance = graphlab.recommender.util.compare_models(test_data, [popularity_model, personalized_model], user_sample=.05)
+
+
+# In[49]:
+
+
+df[df['productid']==261]
+
